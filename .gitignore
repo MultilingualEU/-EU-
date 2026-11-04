@@ -1,0 +1,37 @@
+# --- 문서 (README만 올림) ---
+*.md
+!README.md
+~$*
+
+# --- 개인 탐색/파일럿 노트북 (원본은 팀 Drive에 있음) ---
+E5에_전처리가_필요한가_.ipynb
+FS100_pilot.ipynb
+ML_데이터 다운받기.ipynb
+tokenizer_diagnostics.ipynb
+
+# --- 데이터/cache/결과물 (Drive에서 관리) ---
+*.npy
+*.npz
+*.parquet
+*.joblib
+*.pkl
+*.zip
+data/
+outputs/
+local_data/
+
+# --- Python / Jupyter ---
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+
+# --- 에디터 / OS / 도구 ---
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db
+desktop.ini
