@@ -9,6 +9,9 @@ FS100_pilot.ipynb
 ML_데이터 다운받기.ipynb
 tokenizer_diagnostics.ipynb
 
+# 개인 확인용 스크립트
+check_*.py
+
 # 데이터/cache/결과물 (Drive에서 관리)
 *.npy
 *.npz
