@@ -9,6 +9,7 @@
 import json
 
 import pandas as pd
+from tqdm.auto import tqdm
 
 import b_common as b
 
@@ -25,7 +26,7 @@ def result(C, threshold, Y, P):
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    test = {lang: b.load_split(lang, 'test') for lang in LANGS}
+    test = {lang: b.load_split(lang, 'test') for lang in tqdm(LANGS, desc='test 불러오기')}
     ids = test['en'][2]
     assert all(t[2] == ids for t in test.values()), '언어별 test CELEX 순서가 다름'
 
@@ -34,33 +35,33 @@ def main():
     X_val, Y_val, _ = b.load_split('en', 'validation')
     std = b.select_C_threshold(X, Y, X_val, Y_val)
     C, th = std['C'], std['threshold']
-    print(f'[Standard] C={C}, threshold={th}  (이 값을 C, F에게 공유)')
+    print(f'[Standard] C={C}, threshold={th}')
     P_std = {lang: b.predict_proba(std['model'], test[lang][0]) for lang in LANGS}
     res_std = {lang: result(C, th, test[lang][1], P_std[lang]) for lang in LANGS}
     b.save_predictions('standard_test', P_std, ids, {'condition': 'standard', 'split': 'test', 'results': res_std})
 
     # 2. Diagnostic zero-shot: 같은 모델, target validation으로 threshold만 다시 선택 (target 7개)
     res_diag, diag_log = {}, {}
-    for lang in TARGETS:
+    for lang in tqdm(TARGETS, desc='Diagnostic'):
         X_val, Y_val, _ = b.load_split(lang, 'validation')
         th_t, score = b.select_threshold(Y_val, b.predict_proba(std['model'], X_val))
         res_diag[lang] = result(C, th_t, test[lang][1], P_std[lang])
         diag_log[lang] = {'threshold': th_t, 'val_micro_f1': score}
-        print(f'[Diagnostic] {lang}: threshold={th_t}')
+        tqdm.write(f'[Diagnostic] {lang}: threshold={th_t}')
     b.save_predictions('diagnostic_test', {lang: P_std[lang] for lang in TARGETS}, ids,
                        {'condition': 'diagnostic', 'split': 'test', 'results': res_diag})
 
     # 3. Direct target: 각 target 10,000 학습, target validation으로 C와 threshold 선택
     #    EN은 Standard와 같은 조건이라 그대로 사용 (RQ1-E5에 8개 언어 필요)
     P_dir, res_dir, dir_log = {'en': P_std['en']}, {'en': res_std['en']}, {'en': std['grid']}
-    for lang in TARGETS:
+    for lang in tqdm(TARGETS, desc='Direct'):
         X, Y, _ = b.load_split(lang, 'main_train')
         X_val, Y_val, _ = b.load_split(lang, 'validation')
         d = b.select_C_threshold(X, Y, X_val, Y_val)
         P_dir[lang] = b.predict_proba(d['model'], test[lang][0])
         res_dir[lang] = result(d['C'], d['threshold'], test[lang][1], P_dir[lang])
         dir_log[lang] = d['grid']
-        print(f"[Direct] {lang}: C={d['C']}, threshold={d['threshold']}")
+        tqdm.write(f"[Direct] {lang}: C={d['C']}, threshold={d['threshold']}")
     b.save_predictions('direct_test', P_dir, ids, {'condition': 'direct', 'split': 'test', 'results': res_dir})
 
     # 4. 결과 표: 조건별 지표, Observed Gap, Threshold Effect, Residual Gap, Performance Drop
