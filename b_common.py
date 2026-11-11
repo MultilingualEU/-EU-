@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
+from tqdm.auto import tqdm
 
 SEED = 42
 N_LABELS = 21
@@ -92,7 +93,7 @@ def select_C_threshold(X_train, Y_train, X_val, Y_val, C_grid=(1, 10, 100, 1000)
     C 동률이면 작은 C. 선택된 모델을 같이 돌려줘서 다시 학습하지 않게 한다.
     """
     best, grid = None, []
-    for C in sorted(C_grid):
+    for C in tqdm(sorted(C_grid), desc='C 격자', leave=False):
         model = fit_ovr(X_train, Y_train, C)
         threshold, score = select_threshold(Y_val, predict_proba(model, X_val))
         grid.append({'C': C, 'threshold': threshold, 'val_micro_f1': score})
