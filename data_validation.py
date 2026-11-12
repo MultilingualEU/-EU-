@@ -1,4 +1,3 @@
-"""E Phase 1: read-only CELEX/label validation; never resample or edit inputs."""
 import argparse
 import itertools
 import json
