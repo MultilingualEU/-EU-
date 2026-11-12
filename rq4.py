@@ -7,7 +7,7 @@ from scipy.stats import spearmanr, linregress
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from e_data_validation import write_csv
+from data_validation import write_csv
 
 TARGETS=['DE','FR','EL','FI','PL','BG','MT']
 FIELDS=['top1_retrieval_acc','same_celex_cosine_mean','same_celex_cosine_sd','mean_chunks','mean_tokens','mean_words','corpus_fertility','doc_mean_fertility']
@@ -55,7 +55,7 @@ def scatter(x,y,languages,path):
     for a,b,l in zip(x,y,languages): ax.annotate(l,(a,b),xytext=(5,5),textcoords='offset points')
     fit=regression(x,y); grid=np.linspace(min(x),max(x),30)
     ax.plot(grid,fit['intercept']+fit['slope']*grid,color='#e07a5f')
-    ax.set(xlabel='Dummy explanatory variable',ylabel='Dummy transfer gap',title='Phase 1 dummy data — not research results')
+    ax.set(xlabel='Dummy explanatory variable',ylabel='Dummy transfer gap',title='Dummy data — not research results')
     fig.savefig(path,dpi=160);plt.close(fig)
 
 
@@ -78,11 +78,11 @@ def dummy_tests(out):
             except ValueError: return True
             return False
         test('reject_'+name,rejected)
-    scatter(x,y,TARGETS,out/'e_phase1_dummy_scatter.png')
-    test('scatter_saved',lambda:(out/'e_phase1_dummy_scatter.png').stat().st_size>1000)
-    write_csv(pd.DataFrame({'lang':TARGETS,'dummy_x':x,'dummy_gap':y}),out/'e_phase1_dummy_data.csv')
-    write_csv(loo,out/'e_phase1_dummy_loo.csv')
-    write_csv(pd.DataFrame(rows),out/'e_phase1_dummy_test.csv')
+    scatter(x,y,TARGETS,out/'rq4_dummy_scatter.png')
+    test('scatter_saved',lambda:(out/'rq4_dummy_scatter.png').stat().st_size>1000)
+    write_csv(pd.DataFrame({'lang':TARGETS,'dummy_x':x,'dummy_gap':y}),out/'rq4_dummy_data.csv')
+    write_csv(loo,out/'rq4_dummy_loo.csv')
+    write_csv(pd.DataFrame(rows),out/'rq4_dummy_test.csv')
     if any(r['status']!='PASS' for r in rows): raise RuntimeError('Dummy test failure.')
     print('Dummy tests:',len(rows),'PASS')
 
@@ -122,8 +122,8 @@ def alignment(root,out):
         for key in FIELDS:
             delta=float(row[key]-old.loc[row['lang'],key])
             checks.append(dict(lang=row['lang'],metric=key,recalculated=row[key],original=old.loc[row['lang'],key],difference=delta,status='PASS' if np.isclose(delta,0,atol=1e-10,rtol=0) else 'FAIL'))
-    write_csv(result,out/'e_alignment_recomputed.csv')
-    write_csv(pd.DataFrame(checks),out/'e_alignment_comparison.csv')
+    write_csv(result,out/'rq4_alignment_recomputed.csv')
+    write_csv(pd.DataFrame(checks),out/'rq4_alignment_comparison.csv')
     if any(r['status']=='FAIL' for r in checks): raise RuntimeError('Recalculated alignment differs from A result.')
     return result
 
@@ -139,21 +139,21 @@ def merge(root,out,align):
     performance=['standard_micro_f1','diagnostic_micro_f1','direct_micro_f1']
     res=normalized(align).merge(b[['lang']+list(GAPS)+performance],on='lang',validate='one_to_one').rename(columns=GAPS).set_index('lang').loc[TARGETS].reset_index()
     if len(res)!=7 or not np.isfinite(res[FIELDS+list(GAPS.values())+performance].to_numpy()).all(): raise ValueError('Invalid language-level table.')
-    write_csv(res,out/'e_phase2_language_level.csv')
+    write_csv(res,out/'rq4_language_level.csv')
     template=pd.DataFrame(columns=['lang']+FIELDS+list(GAPS.values())+performance)
-    write_csv(template,out/'e_language_level_template.csv')
+    write_csv(template,out/'rq4_language_level_template.csv')
     print('Language-level table:',res.shape)
     return res
 
 
 if __name__=='__main__':
     ap=argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('mode',choices=['phase1_test','phase2_merge','alignment'])
+    ap.add_argument('mode',choices=['dummy_test','merge','alignment'])
     ap.add_argument('--root',type=Path,required=True);ap.add_argument('--out',type=Path,required=True)
     a=ap.parse_args();root=a.root.resolve();out=a.out.resolve()
     if out==root or root in out.parents: raise ValueError('Output must be outside source project.')
     out.mkdir(parents=True,exist_ok=True)
-    if a.mode=='phase1_test': dummy_tests(out)
+    if a.mode=='dummy_test': dummy_tests(out)
     elif a.mode=='alignment': alignment(root,out)
     else:
         align=alignment(root,out)
