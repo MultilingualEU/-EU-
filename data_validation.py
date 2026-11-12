@@ -90,8 +90,8 @@ def validate(root, out):
                     cached=np.load(cache/'03_labels'/f'{lang}_{split}_Y.npy',allow_pickle=False)
                     record(f'{lang}/{split}:raw_labels',np.array_equal(y,cached),'raw parquet vs cache',scope='raw_parquet')
     report=pd.DataFrame(rows)
-    write_csv(report,out/'e_validation_report.csv')
-    write_csv(pd.DataFrame(distributions),out/'e_label_distribution.csv')
+    write_csv(report,out/'validation_report.csv')
+    write_csv(pd.DataFrame(distributions),out/'label_distribution.csv')
     print(report.status.value_counts().to_dict(),f'max label difference={maxdiff:.6f} pp')
     if (report.status=='FAIL').any(): raise RuntimeError('Validation failed; inspect report.')
     return report
