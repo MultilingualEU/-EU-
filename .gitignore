@@ -22,6 +22,7 @@ check_*.py
 data/
 outputs/
 local_data/
+figures/
 
 # Python / Jupyter
 __pycache__/
