@@ -16,7 +16,7 @@ import b_common as b
 LANGS = ['en', 'de', 'fr', 'el', 'fi', 'pl', 'bg', 'mt']
 TARGETS = LANGS[1:]
 METRICS = ['micro_f1', 'macro_f1', 'mrp']
-OUT = b.ROOT / 'results' / 'rq2'
+OUT = b.RESULTS_DIR / 'rq2'  # 기본값은 기계학습/results/rq2 (EU_RESULTS_DIR로 바꿀 수 있음)
 SETTINGS_PATH = b.CACHE_ROOT / 'cache_metadata' / 'classifier_settings.json'
 
 

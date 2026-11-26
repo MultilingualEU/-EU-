@@ -24,8 +24,12 @@ _ROOT_CANDIDATES = [
 ROOT = next((Path(p) for p in _ROOT_CANDIDATES if p and Path(p).exists()), None)
 if ROOT is None:
     raise FileNotFoundError('기계학습 폴더를 찾지 못함. EU_ROOT 환경변수로 경로를 지정하세요.')
-CACHE_ROOT = ROOT / '임베딩 결과'
-PRED_DIR = ROOT / 'predictions'
+# 인코더 비교 실험에서는 아래 환경변수로 경로를 바꾼다. 지정하지 않으면 지금 E5 경로 그대로.
+CACHE_ROOT = Path(os.environ.get('EU_CACHE_ROOT') or ROOT / '임베딩 결과')
+PRED_DIR = Path(os.environ.get('EU_PRED_DIR') or ROOT / 'predictions')
+RESULTS_DIR = Path(os.environ.get('EU_RESULTS_DIR') or ROOT / 'results')
+# label 21개를 몇 개씩 동시에 학습할지. label마다 독립이라 값과 관계없이 결과는 같음.
+N_JOBS = int(os.environ.get('EU_N_JOBS', '1'))
 
 sys.path.insert(0, str(CACHE_ROOT))
 from cache_loader import load_cache  # noqa: E402  (A의 로더)
@@ -44,16 +48,19 @@ def fit_ovr(X_train, Y_train, C):
     """
     if Y_train.shape != (X_train.shape[0], N_LABELS):
         raise ValueError('Y_train은 (문서 수, 21)이어야 함')
-    model = []
-    for j in range(N_LABELS):
+
+    def fit_one(j):
         y = Y_train[:, j]
         if np.unique(y).size < 2:
-            model.append(float(y.mean()))
-        else:
-            clf = LogisticRegression(C=float(C), solver='lbfgs', max_iter=2000,
-                                     class_weight=None, random_state=SEED)
-            model.append(clf.fit(X_train, y))
-    return model
+            return float(y.mean())
+        clf = LogisticRegression(C=float(C), solver='lbfgs', max_iter=2000,
+                                 class_weight=None, random_state=SEED)
+        return clf.fit(X_train, y)
+
+    if N_JOBS == 1:
+        return [fit_one(j) for j in range(N_LABELS)]
+    from joblib import Parallel, delayed
+    return Parallel(n_jobs=N_JOBS)(delayed(fit_one)(j) for j in range(N_LABELS))
 
 
 def predict_proba(model, X):

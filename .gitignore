@@ -13,6 +13,7 @@ tokenizer_diagnostics.ipynb
 check_*.py
 
 # 데이터/cache/결과물 (Drive에서 관리)
+기계학습/
 *.npy
 *.npz
 *.parquet

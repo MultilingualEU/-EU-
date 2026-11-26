@@ -14,12 +14,12 @@ def write_csv(frame, path):
         frame.to_csv(stream, index=False)
 
 
-def validate(root, out):
+def validate(root, out, cache=None, dim=384):
     root, out = Path(root).resolve(), Path(out).resolve()
     if out == root or root in out.parents:
         raise ValueError('Choose an output directory outside the source project.')
     out.mkdir(parents=True, exist_ok=True)
-    cache = root / '임베딩 결과'
+    cache = Path(cache).resolve() if cache else root / '임베딩 결과'
     splits = json.loads((cache/'01_splits/celex_splits.json').read_text(encoding='utf-8'))
     rows, distributions = [], []
 
@@ -47,7 +47,7 @@ def validate(root, out):
             x=np.load(cache/'02_embeddings_core_480_mean'/f'{lang}_{split}.npy',allow_pickle=False,mmap_mode='r')
             record(f'{lang}/{split}:ids',ids==splits[split] and ids==embedding_ids,'split = labels = embeddings')
             record(f'{lang}/{split}:Y',y.shape==(expected,21) and np.isin(y,[0,1]).all(),y.shape)
-            record(f'{lang}/{split}:X',x.shape==(expected,384) and np.isfinite(x).all(),x.shape)
+            record(f'{lang}/{split}:X',x.shape==(expected,dim) and np.isfinite(x).all(),x.shape)
             norms=np.linalg.norm(x,axis=1)
             record(f'{lang}/{split}:L2_norm',np.allclose(norms,1,atol=1e-4),f'min={norms.min()}, max={norms.max()}')
             if lang=='en': reference[split]=y
@@ -101,4 +101,6 @@ if __name__=='__main__':
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--root',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
-    args=ap.parse_args();validate(args.root,args.out)
+    ap.add_argument('--cache',type=Path,default=None,help='검사할 cache 폴더. 기본값은 ROOT/임베딩 결과 (E5)')
+    ap.add_argument('--dim',type=int,default=384,help='embedding 차원. E5=384, LaBSE·gte=768')
+    args=ap.parse_args();validate(args.root,args.out,args.cache,args.dim)
