@@ -1,7 +1,9 @@
 """LaBSE, gte-multilingual-base 문서 임베딩 cache 생성.
 
 E5 cache(Embedding_2020503660.ipynb)와 같은 처리:
-- 본문을 prefix 없이 tokenize → 480 token씩 자름 (overlap 0, chunk 수 제한 없음) → [CLS] + chunk + [SEP]
+- 본문을 tokenize → 480 token씩 자름 (overlap 0, chunk 수 제한 없음) → [CLS] + chunk + [SEP]
+  (E5 cache 생성 코드는 모델 카드 권장 'query: ' prefix를 [CLS] 뒤에 붙임. 실제 사용한 E5 cache는 생성 설정이
+   기록되지 않은 legacy cache. LaBSE와 gte는 모델 카드에 권장 prefix가 없어 붙이지 않음)
 - chunk 하나: 모델의 sentence-transformers 모듈 중 Normalize 앞까지 (LaBSE: CLS pooling + Dense(tanh), gte: CLS pooling)
 - 문서: chunk 벡터의 단순 평균 → L2 정규화. fp32 (TF32 끔)
 - 같은 CELEX 순서(01_splits/celex_splits.json), 같은 폴더 구조, label은 E5 cache 파일을 그대로 복사

@@ -4,7 +4,7 @@ E5 입력 (기존 결과, 읽기만):
   results/rq2/rq2_table.csv, F_구성휴/F_Phase2_B_CI/F_01_Transfer_Gap_CI.csv,
   rq3_fewshot_결과/summary/recovery.csv, paired_diff.csv, results/rq4/rq4_stability.csv
 LaBSE, gte 입력: 인코더 비교/{인코더}/results/ 아래 rq2, rq3_fewshot/summary, rq4/analysis*
-출력: 인코더 비교/비교/*.csv
+출력: 인코더 비교/비교/*.csv (rq3_recovery_all_N.csv는 세 인코더의 N 10~1000 회복률 전체)
 """
 import json
 
@@ -95,15 +95,19 @@ def main():
     pd.DataFrame(rank_corr).to_csv(out / 'rq2_transfer_gap_rank_agreement.csv', index=False, encoding='utf-8-sig')
 
     # RQ3: N=100, N=1000 회복률과 English control
-    rec_rows, ctrl_rows = [], []
+    rec_rows, ctrl_rows, rec_all_rows = [], [], []
     for e in ENCS:
         rec = read(src[e]['rec'])
+        rec_all_rows.append(rec.assign(encoder=e))
         rec = rec[rec.N.isin([100, 1000])] if 'N' in rec else rec
         rec_rows.append(rec.assign(encoder=e))
         ctrl = read(src[e]['ctrl'])
         ctrl_rows.append(ctrl.assign(encoder=e))
     rec = pd.concat(rec_rows, ignore_index=True)
     rec.to_csv(out / 'rq3_recovery_N100_N1000.csv', index=False, encoding='utf-8-sig')
+    # 모든 N(10, 30, 100, 300, 1000)의 회복률. 회복률을 계산하지 않은 언어는 N이 비어 있음
+    pd.concat(rec_all_rows, ignore_index=True).to_csv(out / 'rq3_recovery_all_N.csv', index=False,
+                                                       encoding='utf-8-sig')
     rec_wide = rec.pivot_table(index='lang', columns=['N', 'encoder'], values='recovery_mean').reindex(ec.TARGETS)
     rec_wide = rec_wide.reindex(columns=pd.MultiIndex.from_product([[100, 1000], ENCS]))
     rec_wide.to_csv(out / 'rq3_recovery_wide.csv', encoding='utf-8-sig')
