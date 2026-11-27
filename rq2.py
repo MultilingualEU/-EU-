@@ -33,7 +33,7 @@ def main():
     # 1. Standard zero-shot: EN 10,000 학습, EN validation으로 C와 threshold 선택, 8개 언어 test에 적용
     X, Y, _ = b.load_split('en', 'main_train')
     X_val, Y_val, _ = b.load_split('en', 'validation')
-    std = b.select_C_threshold(X, Y, X_val, Y_val)
+    std = b.select_C_threshold(X, Y, X_val, Y_val, desc='Standard en C 격자')
     C, th = std['C'], std['threshold']
     print(f'[Standard] C={C}, threshold={th}')
     P_std = {lang: b.predict_proba(std['model'], test[lang][0]) for lang in LANGS}
@@ -57,7 +57,7 @@ def main():
     for lang in tqdm(TARGETS, desc='Direct'):
         X, Y, _ = b.load_split(lang, 'main_train')
         X_val, Y_val, _ = b.load_split(lang, 'validation')
-        d = b.select_C_threshold(X, Y, X_val, Y_val)
+        d = b.select_C_threshold(X, Y, X_val, Y_val, desc=f'Direct {lang} C 격자')
         P_dir[lang] = b.predict_proba(d['model'], test[lang][0])
         res_dir[lang] = result(d['C'], d['threshold'], test[lang][1], P_dir[lang])
         dir_log[lang] = d['grid']
